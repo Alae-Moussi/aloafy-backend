@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/appUser")
 public class AppUserController {

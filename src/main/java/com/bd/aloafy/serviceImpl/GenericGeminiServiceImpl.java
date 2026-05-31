@@ -2,25 +2,21 @@ package com.bd.aloafy.serviceImpl;
 
 import com.bd.aloafy.service.GenericGeminiService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.genai.Client;
-import com.google.genai.types.GenerateContentResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class GenericGeminiServiceImpl implements GenericGeminiService {
 
     private static final Logger logger = LoggerFactory.getLogger(GenericGeminiServiceImpl.class);
-
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
-
-    @Value("${gemini.models}")
-    private String geminiModels;
-
     private final ObjectMapper objectMapper;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    private final String API_URL = "https://alaemoussi-aloafy-api.hf.space/chat/";
 
     public GenericGeminiServiceImpl(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -32,38 +28,34 @@ public class GenericGeminiServiceImpl implements GenericGeminiService {
             throw new IllegalArgumentException("Prompt cannot be null or empty");
         }
 
-        // Initialisation du client officiel Google GenAI v1.24.0
-        Client client = new Client.Builder().apiKey(geminiApiKey).build();
-        String[] models = geminiModels.split(",");
-        Exception lastException = null;
+        logger.info("Envoi du prompt à Aloafy API...");
 
-        for (int i = 0; i < models.length; i++) {
-            try {
-                logger.info("Calling Gemini Api with model: {} ({}/{})", models[i].trim(), i + 1, models.length);
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("user_id", 1);
+        requestBody.put("message", prompt);
 
-                // Correction définitive pour le SDK officiel : on utilise l'accès .models()
-                // mais la méthode attend des paramètres structurés ou simplifiés selon la signature exacte.
-                GenerateContentResponse responseObj = client.models.generateContent(models[i].trim(), prompt, null);
-                String response = (responseObj != null) ? responseObj.text() : null;
+        try {
+            Map<?, ?> apiResponse = restTemplate.postForObject(API_URL, requestBody, Map.class);
+            logger.info("Réponse reçue : {}", apiResponse);
 
-                if (response == null || response.isEmpty()) {
-                    throw new RuntimeException("Empty response from Gemini API");
-                }
-
-                return parseResponse(response, responseType);
-
-            } catch (Exception ex) {
-                if (ex.getMessage() != null && ex.getMessage().contains("429")) {
-                    logger.warn("Rate limit exceeded for {}. Trying next model...", models[i].trim());
-                    lastException = ex;
-                    if (i < models.length - 1) continue;
-                } else {
-                    throw new RuntimeException("Gemini API error: " + ex.getMessage(), ex);
-                }
+            String botReply = null;
+            if (apiResponse != null && apiResponse.containsKey("response")) {
+                botReply = String.valueOf(apiResponse.get("response"));
             }
-        }
 
-        throw new RuntimeException("All models exhausted due to rate limits", lastException);
+            if (botReply == null || botReply.trim().isEmpty()) {
+                throw new RuntimeException("Réponse vide de l'API");
+            }
+
+            return parseResponse(botReply, responseType);
+
+        } catch (Exception ex) {
+            logger.error("Erreur : {}", ex.getMessage());
+            if (responseType == String.class) {
+                return responseType.cast("Erreur: " + ex.getMessage());
+            }
+            throw new RuntimeException("Aloafy API error: " + ex.getMessage(), ex);
+        }
     }
 
     private <T> T parseResponse(String response, Class<T> responseType) {
@@ -78,13 +70,12 @@ public class GenericGeminiServiceImpl implements GenericGeminiService {
             } else if (json.startsWith("```")) {
                 json = json.substring(3);
             }
-
             if (json.endsWith("```")) {
                 json = json.substring(0, json.length() - 3);
             }
-
             return objectMapper.readValue(json.trim(), responseType);
         } catch (Exception ex) {
+            logger.error("JSON non conforme pour {} : {}", responseType.getSimpleName(), response);
             throw new RuntimeException("Failed to parse response: " + ex.getMessage(), ex);
         }
     }

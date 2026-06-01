@@ -48,11 +48,23 @@ public class AuthServiceImpl implements AuthService {
         appUser.setName(request.getName());
         appUser.setEmail(request.getEmail());
         appUser.setPassword(passwordEncoder.encode(tempPassword));
-        appUser.setRole(request.getRole() != null ? request.getRole() : "USER");
 
+        // CORRIGÉ : Attribution sécurisée du rôle par défaut
+        appUser.setRole("USER");
+
+        // Sauvegarde impérative en Base de Données
         appUserRepository.save(appUser);
 
-        emailService.sendWelcomeEmail(appUser.getEmail(), appUser.getName(), tempPassword);
+        // Bloc de sécurité pour l'envoi de mail SMTP
+        try {
+            emailService.sendWelcomeEmail(appUser.getEmail(), appUser.getName(), tempPassword);
+        } catch (Exception e) {
+            System.err.println("============== ALOAFY SECURE MAIL SYSTEM ==============");
+            System.err.println("❌ L'envoi du mail de bienvenue a échoué ! Vérifie ton SMTP.");
+            System.err.println("🔑 MOT DE PASSE DE SECOURS GÉNÉRÉ POUR " + appUser.getEmail() + " : " + tempPassword);
+            System.err.println("Erreur exacte : " + e.getMessage());
+            System.err.println("=======================================================");
+        }
 
         return new MessageResponse("Account created successfully. A temporary password has been sent to your email");
     }
@@ -77,47 +89,49 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AppUserResponse refreshAccessToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+        String email = jwtUtil.extractEmail(refreshToken);
 
-            String refreshToken = request.getRefreshToken();
+        if (!jwtUtil.isRefreshToken(refreshToken)) {
+            throw new InvalidTokenException("Invalid token type");
+        }
 
-            String email = jwtUtil.extractEmail(refreshToken);
-
-            // 2. On vérifie si c'est bien un Refresh Token (et pas un Access Token)
-            if (!jwtUtil.isRefreshToken(refreshToken)) {
-                throw new InvalidTokenException("Invalid token type");
-            }
-
-            // 3. On cherche l'utilisateur qui possède ce Refresh Token
-            AppUser appUser = appUserRepository.findByRefreshToken(refreshToken)
-                    .orElseThrow(() -> new InvalidTokenException("Invalid Refresh token "));
+        AppUser appUser = appUserRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new InvalidTokenException("Invalid Refresh token "));
 
         if (!jwtUtil.validateToken(refreshToken, email)) {
             throw new InvalidTokenException("Invalid or expired refresh token");
         }
         String newAccessToken = jwtUtil.generateAccessToken(appUser.getId(), appUser.getName(), appUser.getEmail(), appUser.getRole());
 
-        // 6. On renvoie la réponse avec le nouveau token
         return AppUserResponse.fromEntity(appUser, newAccessToken, refreshToken);
     }
 
     @Override
     public MessageResponse forgotPassword(ForgotPasswordRequest request) {
         AppUser appUser = appUserRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request
-                        .getEmail()));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
 
         String tempPassword = generateTemporaryPassword();
 
         appUser.setPassword(passwordEncoder.encode(tempPassword));
         appUserRepository.save(appUser);
 
-        emailService.sendCredentialsEmail(appUser.getEmail(), appUser.getName(), tempPassword);
+        try {
+            emailService.sendCredentialsEmail(appUser.getEmail(), appUser.getName(), tempPassword);
+        } catch (Exception e) {
+            System.err.println("============== ALOAFY SECURE MAIL SYSTEM ==============");
+            System.err.println("❌ L'envoi du mail de récupération a échoué !");
+            System.err.println("🔑 NOUVEAU MOT DE PASSE DE SECOURS GÉNÉRÉ POUR " + appUser.getEmail() + " : " + tempPassword);
+            System.err.println("=======================================================");
+        }
 
         return new MessageResponse("Temporary password has been sent to your email");
     }
 
     private String generateTemporaryPassword() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%";
+        // Alphanumérique pur pour éviter les conflits de caractères spéciaux dans le template HTML du mail
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(10);
 

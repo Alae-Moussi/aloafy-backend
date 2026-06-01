@@ -57,10 +57,10 @@ public class EmailServiceImpl implements EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Welcome to Musify - Your Account is Ready");
+            message.setSubject("Welcome to Aloafy - Your Account is Ready");
 
             String emailBody = "Hi " + userName + ",\n\n" +
-                    "Welcome to Musify! Your account has been successfully created.\n\n" +
+                    "Welcome to Aloafy! Your account has been successfully created.\n\n" +
                     "Here are your login credentials:\n\n" +
                     "Email: " + toEmail + "\n" +
                     "Temporary Password: " + password + "\n\n" +
@@ -68,7 +68,7 @@ public class EmailServiceImpl implements EmailService {
                     "IMPORTANT: For security reasons, please change your password immediately after logging in.\n\n" +
                     "Start exploring and enjoying your favorite music!\n\n" +
                     "Best regards,\n" +
-                    "Musify Team";
+                    "Aloafy Team";
 
             message.setText(emailBody);
             mailSender.send(message);

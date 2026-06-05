@@ -20,9 +20,15 @@ jobs:
       - name: Push to Docker Hub
         run: docker push lailaaaaa/aloafy-backend:latest
 
-  deploy-to-prod:
+deploy-to-prod:
     needs: build-and-push
     runs-on: self-hosted
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Stage Kubernetes Manifest
+        run: cp k8s/backend.yml /tmp/backend.yml
+
       - name: Run Ansible Playbook to Deploy Backend on Prod VM
         run: ansible-playbook -i ~/hosts.ini ~/deploy_backend.yml

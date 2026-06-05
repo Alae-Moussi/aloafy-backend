@@ -6,8 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.5.13</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
+		<relativePath/> </parent>
 	<groupId>com.bd.aloafy</groupId>
 	<artifactId>com.bd.aloafy</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -110,7 +109,11 @@
     </resources>
 
     <plugins>
-        </plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
 </build>
 
 </project>

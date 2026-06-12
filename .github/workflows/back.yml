@@ -39,12 +39,18 @@ jobs:
       - name: Simulation setup
         run: echo "Fin du pipeline DevSecOps. Scan Trivy disponible dans les logs du build !"
 
-      # L'étape Telegram est désactivée temporairement pour éviter l'erreur d'authentification
-      # - name: Send Telegram Notification
-      #   uses: appleboy/telegram-action@master
-      #   if: always()
-      #   with:
-      #     to: ${{ secrets.TELEGRAM_TO }}
-      #     token: ${{ secrets.TELEGRAM_TOKEN }}
-      #     message: |
-      #       🚀 *PROJET ALOAFY — RAPPORT DEVSECOPS*
+- name: Send Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: new-channel
+          SLACK_COLOR: ${{ job.status == 'success' ? 'good' : 'danger' }}
+          SLACK_ICON: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+          SLACK_TITLE: '🚀 Rapport DevSecOps — Projet Aloafy'
+          SLACK_MESSAGE: |
+            Le pipeline CI/CD vient de s'exécuter !
+            *Statut du build :* ${{ job.status }}
+            *Scan de sécurité Trivy :* Terminé avec succès. 
+            Consultez les logs GitHub Actions pour voir le rapport détaillé.
+      

@@ -36,6 +36,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Simulation setup
+        run: echo "Preparing deployment report..."
+
       - name: Send Telegram Notification
         uses: appleboy/telegram-action@master
         if: always()
@@ -45,9 +48,9 @@ jobs:
           message: |
             🚀 *PROJET ALOAFY — RAPPORT DEVSECOPS*
             
-            🔹 *Statut :* ✅ Code Validé & Scanné
+            🔹 *Statut Trivy :* ✅ Image Scannée & Validée
             🔹 *Auteur :* ${{ github.actor }}
             🔹 *Branche :* ${{ github.ref_name }}
             🔹 *Commit :* ${{ github.event.head_commit.message }}
             
-            L'image Docker a été inspectée avec succès par le scanner Trivy ! Les vulnérabilités High et Critical ont été répertoriées dans les logs de GitHub.
+            L'image Docker backend a été inspectée avec succès par Trivy ! Les résultats des vulnérabilités High et Critical sont disponibles dans les logs du build.

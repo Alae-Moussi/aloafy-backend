@@ -51,7 +51,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.projectlombok</githubId>
+			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>

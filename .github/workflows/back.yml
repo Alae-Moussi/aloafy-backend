@@ -37,20 +37,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Simulation setup
-        run: echo "Preparing deployment report..."
+        run: echo "Fin du pipeline DevSecOps. Scan Trivy disponible dans les logs du build !"
 
-      - name: Send Telegram Notification
-        uses: appleboy/telegram-action@master
-        if: always()
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            🚀 *PROJET ALOAFY — RAPPORT DEVSECOPS*
-            
-            🔹 *Statut Trivy :* ✅ Image Scannée & Validée
-            🔹 *Auteur :* ${{ github.actor }}
-            🔹 *Branche :* ${{ github.ref_name }}
-            🔹 *Commit :* ${{ github.event.head_commit.message }}
-            
-            L'image Docker backend a été inspectée avec succès par Trivy ! Les résultats des vulnérabilités High et Critical sont disponibles dans les logs du build.
+      # L'étape Telegram est désactivée temporairement pour éviter l'erreur d'authentification
+      # - name: Send Telegram Notification
+      #   uses: appleboy/telegram-action@master
+      #   if: always()
+      #   with:
+      #     to: ${{ secrets.TELEGRAM_TO }}
+      #     token: ${{ secrets.TELEGRAM_TOKEN }}
+      #     message: |
+      #       🚀 *PROJET ALOAFY — RAPPORT DEVSECOPS*

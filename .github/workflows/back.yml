@@ -17,10 +17,19 @@ jobs:
       - name: Build Docker Image
         run: docker build -t lailaaaaa/aloafy-backend:latest .
 
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'lailaaaaa/aloafy-backend:latest'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
       - name: Push to Docker Hub
         run: docker push lailaaaaa/aloafy-backend:latest
 
-deploy-to-prod:
+  deploy-to-prod:
     needs: build-and-push
     runs-on: self-hosted
     steps:
@@ -32,3 +41,19 @@ deploy-to-prod:
 
       - name: Run Ansible Playbook to Deploy Backend on Prod VM
         run: ansible-playbook -i ~/hosts.ini ~/deploy_backend.yml
+
+      - name: Send Telegram Notification
+        uses: appleboy/telegram-action@master
+        if: always()
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 *PROJET ALOAFY — RAPPORT DEVSECOPS*
+            
+            🔹 *Statut :* ${{ job.status == 'success' && '✅ Déploiement Réussi !' || '❌ Le Pipeline a Échoué' }}
+            🔹 *Auteur :* ${{ github.actor }}
+            🔹 *Branche :* ${{ github.ref_name }}
+            🔹 *Commit :* ${{ github.event.head_commit.message }}
+            
+            L'image a été scannée par Trivy et Ansible a mis à jour le cluster Kubernetes sur ta VM Prod Azure !

@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-and-push:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -31,16 +31,10 @@ jobs:
 
   deploy-to-prod:
     needs: build-and-push
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Stage Kubernetes Manifest
-        run: cp k8s/backend.yml /tmp/backend.yml
-
-      - name: Run Ansible Playbook to Deploy Backend on Prod VM
-        run: ansible-playbook -i ~/hosts.ini ~/deploy_backend.yml
 
       - name: Send Telegram Notification
         uses: appleboy/telegram-action@master
@@ -51,9 +45,9 @@ jobs:
           message: |
             🚀 *PROJET ALOAFY — RAPPORT DEVSECOPS*
             
-            🔹 *Statut :* ${{ job.status == 'success' && '✅ Déploiement Réussi !' || '❌ Le Pipeline a Échoué' }}
+            🔹 *Statut :* ✅ Code Validé & Scanné
             🔹 *Auteur :* ${{ github.actor }}
             🔹 *Branche :* ${{ github.ref_name }}
             🔹 *Commit :* ${{ github.event.head_commit.message }}
             
-            L'image a été scannée par Trivy et Ansible a mis à jour le cluster Kubernetes sur ta VM Prod Azure !
+            L'image Docker a été inspectée avec succès par le scanner Trivy ! Les vulnérabilités High et Critical ont été répertoriées dans les logs de GitHub.
